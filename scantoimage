@@ -1,0 +1,4 @@
+#!/bin/bash
+scanimage --resolution 150 -x 210 -y 295 --format tiff > /tmp/scan.tiff
+convert -rotate 180 /tmp/scan.tiff ~/Downloads/scan.jpg
+
