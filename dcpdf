@@ -1,0 +1,26 @@
+#!/bin/bash
+
+input=$1
+output=$input
+shift 1
+while getopts o:vd flag
+do
+    case "${flag}" in
+        o) output=${OPTARG};;
+    esac
+done
+
+# -s : turn off echo
+read -s -p "Password : " pwd
+echo " "
+
+if [ "$output" = "$input" ]; then
+    qpdf --password=$pwd --decrypt --replace-input $input
+else
+    qpdf --password=$pwd --decrypt $input $output
+fi
+
+if [ $? -ne 0 ]; then
+    echo "Error decrypting PDF"
+fi
+
