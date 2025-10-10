@@ -6,6 +6,16 @@ multiple=false
 verbose=false
 debug=false
 
+function usage () {
+    echo "Scan to file (pdf)"
+    echo "Options :"
+    echo "  -r                : Resolution. Defaults to $resolution"
+    echo "  -o <output_file>  : Set output file. Defaults to $output"
+    echo "  -m                : Multiple"
+    echo "  -v                : Verbose"
+    echo "  -d                : Debug"
+}
+
 # Parameters : (output (str))
 function scan_pdf () {
     if [ "$debug" = false ]; then
@@ -17,7 +27,7 @@ function scan_pdf () {
     fi
 }
 
-while getopts r:o:mvd flag
+while getopts r:o:mvdh flag
 do
     case "${flag}" in
         r) resolution=${OPTARG};;
@@ -25,6 +35,7 @@ do
         m) multiple=true;;
         v) verbose=true;;
         d) debug=true;;
+        h) usage; exit 0;;
     esac
 done
 
