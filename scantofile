@@ -2,6 +2,7 @@
 
 resolution=150
 output=~/Downloads/scan.pdf
+gray=false
 multiple=false
 verbose=false
 debug=false
@@ -11,27 +12,42 @@ function usage () {
     echo "Options :"
     echo "  -r                : Resolution. Defaults to $resolution"
     echo "  -o <output_file>  : Set output file. Defaults to $output"
+    echo "  -g                : Gray colorspace"
     echo "  -m                : Multiple"
     echo "  -v                : Verbose"
     echo "  -d                : Debug"
 }
 
-# Parameters : (output (str))
 function scan_pdf () {
-    if [ "$debug" = false ]; then
-        scanimage --resolution $resolution -x 210 -y 295 --format tiff > /tmp/scan.tiff
-        convert -rotate 180 /tmp/scan.tiff $1
-    else
-        echo "scanimage --resolution $resolution -x 210 -y 295 --format tiff > /tmp/scan.tiff"
-        echo "convert -rotate 180 /tmp/scan.tiff $1"
+    _output=$1
+
+    if [ "$debug" = true ]; then
+        echo "scan_pdf(output=$_output)"
     fi
+
+    cmd=(scanimage --resolution $resolution -x 210 -y 295 --format tiff)
+    if [ "$debug" = true ]; then
+        echo "${cmd[*]} > /tmp/scan.tiff"
+    fi
+    ${cmd[@]} > /tmp/scan.tiff
+
+    cmd=(convert -rotate 180)
+    if [ "$gray" = true ]; then
+        cmd+=(-colorspace Gray)
+    fi
+    cmd+=(/tmp/scan.tiff $_output)
+    if [ "$debug" = true ]; then
+        echo "${cmd[*]}"
+    fi
+    ${cmd[@]}
 }
 
-while getopts r:o:mvdh flag
+while getopts r:o:gmvdh flag
 do
     case "${flag}" in
         r) resolution=${OPTARG};;
         o) output=${OPTARG};;
+        g) gray=true;;
         m) multiple=true;;
         v) verbose=true;;
         d) debug=true;;
@@ -42,20 +58,22 @@ done
 echo "Scanning to file (pdf)"
 
 if [ "$verbose" = true ]; then
-    echo "Resolution = $resolution"
-    echo "Output = $output"
+    echo "resolution = $resolution"
+    echo "output = $output"
+    echo "gray = $gray"
+    echo "multiple = $multiple"
 fi
 
 date=$(date '+%Y-%m-%d-%H-%M-%S')
 
 if [ "$multiple" = true ]; then
     continue=true
-    page_nb=1
+    page_cnt=0
     while [ "$continue" = true ]; do
-        echo "Scanning page $page_nb"
-        scan_pdf /tmp/scan_${date}_${page_nb}.pdf
-        echo "Scan page $page_nb complete"
-        page_nb=$((page_nb+1))
+        page_cnt=$((page_cnt+1))
+        echo "Scanning page $page_cnt"
+        scan_pdf /tmp/scan_${date}_${page_cnt}.pdf
+        echo "Scan page $page_cnt complete"
 
         read -p "Scan another page ? (y/n) : " continue
         if [ "$continue" = "n" ]; then
@@ -66,15 +84,19 @@ if [ "$multiple" = true ]; then
         fi
     done
 
-    if [ "$debug" = false ]; then
-        pdftk /tmp/scan_${date}_*.pdf cat output /tmp/scan_${date}.pdf
-        ps2pdf /tmp/scan_${date}.pdf $output
-    else
-        echo "pdftk /tmp/scan_${date}_*.pdf cat output /tmp/scan_${date}.pdf"
-        echo "ps2pdf /tmp/scan_${date}.pdf $output"
+    cmd=(pdftk /tmp/scan_${date}_*.pdf cat output /tmp/scan_${date}.pdf)
+    if [ "$debug" = true ]; then
+        echo "${cmd[*]}"
     fi
+    ${cmd[@]}
 
-    echo "Scan complete ($page_nb pages). Output = $output"
+    cmd=(ps2pdf /tmp/scan_${date}.pdf $output)
+    if [ "$debug" = true ]; then
+        echo "${cmd[*]}"
+    fi
+    ${cmd[@]}
+
+    echo "Scan complete ($page_cnt pages). Output = $output"
 else
     scan_pdf $output
     echo "Scan complete. Output = $output"
