@@ -2,43 +2,34 @@
 
 resolution=150
 output=~/Downloads/scan.pdf
-gray=false
+color=color
 multiple=false
 verbose=false
-debug=false
 
 function usage () {
     echo "Scan to file (pdf)"
     echo "Options :"
-    echo "  -r                : Resolution. Defaults to $resolution"
-    echo "  -o <output_file>  : Set output file. Defaults to $output"
-    echo "  -g                : Gray colorspace"
-    echo "  -m                : Multiple"
-    echo "  -v                : Verbose"
-    echo "  -d                : Debug"
+    echo "  -r <resolution>         : Resolution. Defaults to $resolution"
+    echo "  -o <output_file>        : Output file. Defaults to $output"
+    echo "  -c {color|gray|mono}    : Colorspace [color, gray, monochrome]. Defaults to color"
+    echo "  -m                      : Multiple"
+    echo "  -v                      : Verbose"
 }
 
 function scan_pdf () {
     _output=$1
 
-    if [ "$debug" = true ]; then
-        echo "scan_pdf(output=$_output)"
-    fi
-
-    cmd=(scanimage --resolution $resolution -x 210 -y 295 --format tiff)
-    if [ "$debug" = true ]; then
-        echo "${cmd[*]} > /tmp/scan.tiff"
-    fi
-    ${cmd[@]} > /tmp/scan.tiff
+    scanimage --resolution $resolution -x 210 -y 295 --format tiff > /tmp/scan.tiff
 
     cmd=(convert -rotate 180)
-    if [ "$gray" = true ]; then
+
+    if [ "$color" = "gray" ]; then
         cmd+=(-colorspace Gray)
+    elif [ "$color" = "mono" ]; then
+        cmd+=(-monochrome)
     fi
+
     cmd+=(/tmp/scan.tiff $_output)
-    if [ "$debug" = true ]; then
-        echo "${cmd[*]}"
-    fi
     ${cmd[@]}
 }
 
@@ -47,10 +38,9 @@ do
     case "${flag}" in
         r) resolution=${OPTARG};;
         o) output=${OPTARG};;
-        g) gray=true;;
+        c) color=${OPTARG};;
         m) multiple=true;;
         v) verbose=true;;
-        d) debug=true;;
         h) usage; exit 0;;
     esac
 done
@@ -58,10 +48,10 @@ done
 echo "Scanning to file (pdf)"
 
 if [ "$verbose" = true ]; then
-    echo "resolution = $resolution"
-    echo "output = $output"
-    echo "gray = $gray"
-    echo "multiple = $multiple"
+    echo "resolution    = $resolution"
+    echo "output        = $output"
+    echo "color         = $color"
+    echo "multiple      = $multiple"
 fi
 
 date=$(date '+%Y-%m-%d-%H-%M-%S')
@@ -78,23 +68,11 @@ if [ "$multiple" = true ]; then
         read -p "Scan another page ? (y/n) : " continue
         if [ "$continue" = "n" ]; then
             continue=false
-            break
-        else
-            continue=true
         fi
     done
 
-    cmd=(pdftk /tmp/scan_${date}_*.pdf cat output /tmp/scan_${date}.pdf)
-    if [ "$debug" = true ]; then
-        echo "${cmd[*]}"
-    fi
-    ${cmd[@]}
-
-    cmd=(ps2pdf /tmp/scan_${date}.pdf $output)
-    if [ "$debug" = true ]; then
-        echo "${cmd[*]}"
-    fi
-    ${cmd[@]}
+    pdftk /tmp/scan_${date}_*.pdf cat output /tmp/scan_${date}.pdf
+    ps2pdf /tmp/scan_${date}.pdf $output
 
     echo "Scan complete ($page_cnt pages). Output = $output"
 else
