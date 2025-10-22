@@ -1,5 +1,7 @@
 #!/bin/bash
 
+DEVICE="plustek:libusb:003:002"
+
 resolution=150
 output=~/Downloads/scan.pdf
 color=color
@@ -19,21 +21,30 @@ function usage () {
 function scan_pdf () {
     _output=$1
 
-    scanimage --resolution $resolution -x 210 -y 295 --format tiff > /tmp/scan.tiff
+    cmd=(scanimage --device $DEVICE)
+
+    if [ "$color" = "gray" ]; then
+        cmd+=(--mode Gray)
+    elif [ "$color" = "mono" ]; then
+        cmd+=(--mode Lineart)
+    fi
+
+    cmd+=(--resolution $resolution -x 210 -y 295 --format tiff)
+    ${cmd[@]} > /tmp/scan.tiff
 
     cmd=(convert -rotate 180)
 
-    if [ "$color" = "gray" ]; then
-        cmd+=(-colorspace Gray)
-    elif [ "$color" = "mono" ]; then
-        cmd+=(-monochrome)
-    fi
+    # if [ "$color" = "gray" ]; then
+    #     cmd+=(-colorspace Gray)
+    # elif [ "$color" = "mono" ]; then
+    #     cmd+=(-monochrome)
+    # fi
 
     cmd+=(/tmp/scan.tiff $_output)
     ${cmd[@]}
 }
 
-while getopts r:o:gmvdh flag
+while getopts r:o:c:mvdh flag
 do
     case "${flag}" in
         r) resolution=${OPTARG};;
