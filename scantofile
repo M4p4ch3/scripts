@@ -1,6 +1,19 @@
 #!/bin/bash
 
-DEVICE="plustek:libusb:003:002"
+DEV_ROTATION=0
+if [ "$SCANNER" = "epson_xxx" ]; then
+    DEVICE="plustek:libusb:003:002"
+    DEV_COLOR_MODE_GRAY="Gray"
+    DEV_COLOR_MODE_MONO="Lineart"
+    DEV_ROTATION=180
+elif [ "$SCANNER" = "brother_mfc7440n" ]; then
+    DEVICE="brother3:net1;dev0"
+    DEV_COLOR_MODE_GRAY="Gray"
+    # scanimage invalid argument
+    # fallback to gray
+    # DEV_COLOR_MODE_MONO="'Black & White'"
+    DEV_COLOR_MODE_MONO="Gray"
+fi
 
 resolution=150
 output=~/Downloads/scan.pdf
@@ -24,15 +37,19 @@ function scan_pdf () {
     cmd=(scanimage --device $DEVICE)
 
     if [ "$color" = "gray" ]; then
-        cmd+=(--mode Gray)
+        cmd+=(--mode $DEV_COLOR_MODE_GRAY)
     elif [ "$color" = "mono" ]; then
-        cmd+=(--mode Lineart)
+        cmd+=(--mode $DEV_COLOR_MODE_MONO)
     fi
 
     cmd+=(--resolution $resolution -x 210 -y 295 --format tiff)
     ${cmd[@]} > /tmp/scan.tiff
 
-    cmd=(convert -rotate 180)
+    cmd=(convert)
+
+    if [ $DEV_ROTATION -ne 0 ]; then
+        cmd+=(-rotate $DEV_ROTATION)
+    fi
 
     # if [ "$color" = "gray" ]; then
     #     cmd+=(-colorspace Gray)
