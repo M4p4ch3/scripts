@@ -68,18 +68,15 @@ fi
 date=$(date '+%Y-%m-%d-%H-%M-%S')
 
 if [ "$multiple" = true ]; then
-    continue=true
+    _continue="y"
     page_cnt=0
-    while [ "$continue" = true ]; do
+    while [ "$_continue" = "y" ]; do
         page_cnt=$((page_cnt+1))
         echo "Scanning page $page_cnt"
         scan_pdf /tmp/scan_${date}_${page_cnt}.pdf
         echo "Scan page $page_cnt complete"
 
-        read -p "Scan another page ? (y/n) : " continue
-        if [ "$continue" = "n" ]; then
-            continue=false
-        fi
+        read -p "Scan another page ? (y/n) : " _continue
     done
 
     pdftk /tmp/scan_${date}_*.pdf cat output /tmp/scan_${date}.pdf
