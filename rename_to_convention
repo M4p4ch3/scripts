@@ -1,0 +1,64 @@
+#!/bin/bash
+
+REGEX_DATE_TXT="([0-9]+)[\.-]([0-9]+)[\.-]([0-9]+)[-_](.+)"
+
+function usage() {
+    echo "Rename according to convention : <date(YYYY-MM-DD)>_<text>"
+    echo "Positional arguments :"
+    echo "  FILES   : Files to rename"
+    echo "Options :"
+    echo "  -f      : Force. Don't requestion confirmation from user input"
+    echo "  -v      : Verbose"
+}
+
+FILES="$1"
+shift 1
+
+force=false
+verbose=false
+while getopts fv flag; do
+    case "${flag}" in
+        f) force=true;;
+        v) verbose=true;;
+        h) usage; exit 0;;
+    esac
+done
+
+for file in $FILES; do
+    if [[ $verbose = true ]]; then
+        echo "$file"
+    fi
+
+    if [[ $file =~ $REGEX_DATE_TXT ]]; then
+        date="${BASH_REMATCH[1]}-${BASH_REMATCH[2]}-${BASH_REMATCH[3]}"
+        text=$(echo "${BASH_REMATCH[4]}" | sed -r 's/([A-Z])/_\L\1/g' | sed 's/^_//')
+        new_file="${date}_${text}"
+    else
+        new_file=$(echo "$file" | sed -r 's/([A-Z])/_\L\1/g' | sed 's/^_//')
+    fi
+
+    if [[ "$new_file" = "$file" ]]; then
+        if [[ $verbose = true ]]; then
+            echo "  no change"
+        fi
+
+        continue
+    fi
+
+    cmd=(mv $file $new_file)
+
+    if [[ "$force" = false ]]; then
+        read -p "${cmd[*]}; Confirm ? (y/n) : " confirm
+
+        if [[ "$confirm" != "y" ]]; then
+            if [[ $verbose = true ]]; then
+                echo "  skipped"
+            fi
+
+            continue
+        fi
+    fi
+
+    ${cmd[@]}
+done
+
