@@ -36,11 +36,13 @@ function scan_pdf () {
 
     cmd=(scanimage --device $DEVICE)
 
-    if [ "$color" = "gray" ]; then
-        cmd+=(--mode $DEV_COLOR_MODE_GRAY)
-    elif [ "$color" = "mono" ]; then
-        cmd+=(--mode $DEV_COLOR_MODE_MONO)
-    fi
+    # Result not acceptable on MFC7440N
+    # Color setting moved to convert command
+    # if [ "$color" = "gray" ]; then
+    #     cmd+=(--mode $DEV_COLOR_MODE_GRAY)
+    # elif [ "$color" = "mono" ]; then
+    #     cmd+=(--mode $DEV_COLOR_MODE_MONO)
+    # fi
 
     cmd+=(--resolution $resolution -x 210 -y 295 --format tiff)
     ${cmd[@]} > /tmp/scan.tiff
@@ -51,11 +53,11 @@ function scan_pdf () {
         cmd+=(-rotate $DEV_ROTATION)
     fi
 
-    # if [ "$color" = "gray" ]; then
-    #     cmd+=(-colorspace Gray)
-    # elif [ "$color" = "mono" ]; then
-    #     cmd+=(-monochrome)
-    # fi
+    if [ "$color" = "gray" ]; then
+        cmd+=(-colorspace Gray)
+    elif [ "$color" = "mono" ]; then
+        cmd+=(-monochrome)
+    fi
 
     cmd+=(/tmp/scan.tiff $_output)
     ${cmd[@]}
