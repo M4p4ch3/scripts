@@ -15,8 +15,11 @@ elif [ "$SCANNER" = "brother_mfc7440n" ]; then
     DEV_COLOR_MODE_MONO="Gray"
 fi
 
+date=$(date '+%Y-%m-%d-%H-%M-%S')
+
+device=$DEVICE
 resolution=150
-output=~/Downloads/scan.pdf
+output=~/Downloads/scan_${date}.pdf
 color=color
 multiple=false
 verbose=false
@@ -24,6 +27,7 @@ verbose=false
 function usage () {
     echo "Scan to file (pdf)"
     echo "Options :"
+    echo "  -d <device>             : Device. Defaults to $DEVICE"
     echo "  -r <resolution>         : Resolution. Defaults to $resolution"
     echo "  -o <output_file>        : Output file. Defaults to $output"
     echo "  -c {color|gray|mono}    : Colorspace [color, gray, monochrome]. Defaults to color"
@@ -34,7 +38,7 @@ function usage () {
 function scan_pdf () {
     _output=$1
 
-    cmd=(scanimage --device $DEVICE)
+    cmd=(scanimage --device $device)
 
     # Result not acceptable on MFC7440N
     # Color setting moved to convert command
@@ -66,6 +70,7 @@ function scan_pdf () {
 while getopts r:o:c:mvdh flag
 do
     case "${flag}" in
+        d) device=${OPTARG};;
         r) resolution=${OPTARG};;
         o) output=${OPTARG};;
         c) color=${OPTARG};;
@@ -78,13 +83,12 @@ done
 echo "Scanning to file (pdf)"
 
 if [ "$verbose" = true ]; then
+    echo "device        = $device"
     echo "resolution    = $resolution"
     echo "output        = $output"
     echo "color         = $color"
     echo "multiple      = $multiple"
 fi
-
-date=$(date '+%Y-%m-%d-%H-%M-%S')
 
 if [ "$multiple" = true ]; then
     _continue="y"
