@@ -1,4 +1,66 @@
 #!/bin/bash
-scanimage --resolution 150 -x 210 -y 295 --format tiff > /tmp/scan.tiff
-convert -rotate 180 /tmp/scan.tiff ~/Downloads/scan.jpg
+
+DEV_ROTATION=0
+if [ "$SCANNER" = "epson_xxx" ]; then
+    DEVICE="plustek:libusb:003:002"
+    DEV_ROTATION=180
+elif [ "$SCANNER" = "brother_mfc7440n" ]; then
+    DEVICE="brother3:net1;dev0"
+fi
+
+date=$(date '+%Y-%m-%d-%H-%M-%S')
+
+device=$DEVICE
+resolution=150
+output=~/Downloads/scan_${date}.jpg
+verbose=false
+
+function usage () {
+    echo "Scan to file (pdf)"
+    echo "Options :"
+    echo "  -d <device>             : Device. Defaults to $DEVICE"
+    echo "  -r <resolution>         : Resolution. Defaults to $resolution"
+    echo "  -o <output_file>        : Output file. Defaults to $output"
+    echo "  -v                      : Verbose"
+}
+
+function scan_pdf () {
+    _output=$1
+
+    cmd=(scanimage --device $device)
+
+    cmd+=(--resolution $resolution -x 210 -y 295 --format tiff)
+    ${cmd[@]} > /tmp/scan.tiff
+
+    cmd=(convert)
+
+    if [ $DEV_ROTATION -ne 0 ]; then
+        cmd+=(-rotate $DEV_ROTATION)
+    fi
+
+    cmd+=(/tmp/scan.tiff $_output)
+    ${cmd[@]}
+}
+
+while getopts r:o:vdh flag
+do
+    case "${flag}" in
+        d) device=${OPTARG};;
+        r) resolution=${OPTARG};;
+        o) output=${OPTARG};;
+        v) verbose=true;;
+        h) usage; exit 0;;
+    esac
+done
+
+echo "Scanning to file (pdf)"
+
+if [ "$verbose" = true ]; then
+    echo "device        = $device"
+    echo "resolution    = $resolution"
+    echo "output        = $output"
+fi
+
+scan_pdf $output
+echo "Scan complete. Output = $output"
 
