@@ -1,0 +1,4 @@
+#!/bin/sh
+
+stat -c %s $1
+printf "0x%X\n" `stat -c "%s" $1`
